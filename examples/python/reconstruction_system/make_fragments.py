@@ -35,7 +35,8 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                         config)
 
     option = o3d.pipelines.odometry.OdometryOption()
-    option.depth_diff_max = config["depth_diff_max"]
+
+    option.max_depth_diff = config["depth_diff_max"]
     if abs(s - t) != 1:
         if with_opencv:
             success_5pt, odo_init = pose_estimation(source_rgbd_image,
@@ -141,13 +142,13 @@ def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
                     config["template_fragment_pointcloud"] % fragment_id)
     o3d.io.write_point_cloud(pcd_name,
                              pcd,
-                             format='auto',
                              write_ascii=False,
-                             compressed=True)
+                             compressed=True,print_progress=False)
 
 
 def process_single_fragment(fragment_id, color_files, depth_files, n_files,
                             n_fragments, config):
+    print("Generated path: ",join(config["path_dataset"], config["template_fragment_pointcloud"] %fragment_id))
     if config["path_intrinsic"]:
         intrinsic = o3d.io.read_pinhole_camera_intrinsic(
             config["path_intrinsic"])
@@ -184,6 +185,7 @@ def run(config):
         with mp_context.Pool(processes=max_workers) as pool:
             args = [(fragment_id, color_files, depth_files, n_files,
                      n_fragments, config) for fragment_id in range(n_fragments)]
+            #print("config debug: ", args[0][5])
             pool.starmap(process_single_fragment, args)
     else:
         for fragment_id in range(n_fragments):
